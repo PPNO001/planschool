@@ -1,4 +1,4 @@
-import { onRequest as handleSyncRequest } from "../functions/api/sync.js";
+import { onRequest as handleSyncRequest } from "../sync.js";
 
 export default {
   async fetch(request, env, ctx) {
