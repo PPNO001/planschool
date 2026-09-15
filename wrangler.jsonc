@@ -1,0 +1,22 @@
+{
+  "name": "planschool",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-15",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "protrack-db",
+      "database_id": "d2b4393e-2309-43c2-b526-6ee6ffcf0043"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
