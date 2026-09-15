@@ -1,1 +1,8 @@
-
+src
+sync.js
+schema.sql
+wrangler.jsonc
+README*
+.assetsignore
+.git
+.github
