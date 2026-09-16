@@ -1042,7 +1042,7 @@ html[data-theme="dark"] .activity-report-toolbar h2{color:#d8efff}
                 ทำงานได้บนคอมพิวเตอร์ แท็บเล็ต และมือถือ เมื่อนำชุด Cloudflare D1 ไปเผยแพร่ ข้อมูลโครงการ งบประมาณ ผู้รับผิดชอบ และรายงานจะซิงค์ผ่านฐานข้อมูลส่วนกลาง ส่วนไฟล์รายงานยังอัปโหลดไปยัง Google Drive ตามที่ตั้งค่าไว้</div>
                 <div style="height:14px"></div>
                 <dl class="kv">
-                  <dt>เวอร์ชัน</dt><dd>4.3</dd>
+                  <dt>เวอร์ชัน</dt><dd>4.4</dd>
                   <dt>ผู้พัฒนา</dt><dd>KruPoppon Sribudda</dd>
                   <dt>ติดต่อ</dt><dd><a class="fb" href="https://web.facebook.com/nchpk.net" target="_blank" rel="noopener"><svg><use href="#i-fb"/></svg>web.facebook.com/nchpk.net</a></dd>
                   <dt>รูปแบบไฟล์ที่รองรับ</dt><dd>.xlsx · .xlsm · .xls · .csv</dd>
@@ -2262,8 +2262,10 @@ function renderBudget(){
 }
 function fundCategory(r){
   const source=String(r?.source||'').toLowerCase();
-  if(/พัฒนาผู้เรียน|กิจกรรมพัฒนาผู้เรียน|เรียนฟรี/.test(source))return 'development';
-  if(/อุดหนุน|เงินอุดหนุน/.test(source))return 'subsidy';
+  const project=String(r?.project||'').toLowerCase();
+  const text=source+' '+project;
+  if(/พัฒนาผู้เรียน|กิจกรรมพัฒนาผู้เรียน|กิจกรรมพัฒนาฯ|พัฒนาคุณภาพผู้เรียน|เรียนฟรี/.test(text))return 'development';
+  if(/อุดหนุน|เงินอุดหนุน|สนับสนุนการเรียนการสอน/.test(source))return 'subsidy';
   return 'other';
 }
 function fundSplit(rows){
