@@ -655,7 +655,7 @@ html[data-theme="dark"] .activity-report-toolbar h2{color:#d8efff}
 }
 
 </style>
-<style>.file-icon-actions{display:flex;gap:6px;align-items:center;justify-content:center;white-space:nowrap}.file-icon-button{width:36px;height:36px;padding:7px;display:inline-flex;align-items:center;justify-content:center}.file-icon-button svg{width:20px;height:20px}.file-icon-button[data-remove-attachment]{color:#be123c}.file-icon-button[data-remove-attachment]:hover{background:#fff1f2}</style></head>
+<style>.fund-split{display:grid;grid-template-columns:1fr;gap:4px;margin:8px 0;color:var(--muted);font-size:12px}.fund-split>div{display:flex;justify-content:space-between;gap:8px}.fund-split b{color:var(--ink-2)}.fund-breakdown{display:block;color:var(--muted);font-weight:500;font-size:11px;margin-top:3px;white-space:nowrap}.file-icon-actions{display:flex;gap:6px;align-items:center;justify-content:center;white-space:nowrap}.file-icon-button{width:36px;height:36px;padding:7px;display:inline-flex;align-items:center;justify-content:center}.file-icon-button svg{width:20px;height:20px}.file-icon-button[data-remove-attachment]{color:#be123c}.file-icon-button[data-remove-attachment]:hover{background:#fff1f2}</style></head>
 <body>
 <a class="skip-link" href="#mainContent">ข้ามไปยังเนื้อหาหลัก</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1042,7 +1042,7 @@ html[data-theme="dark"] .activity-report-toolbar h2{color:#d8efff}
                 ทำงานได้บนคอมพิวเตอร์ แท็บเล็ต และมือถือ เมื่อนำชุด Cloudflare D1 ไปเผยแพร่ ข้อมูลโครงการ งบประมาณ ผู้รับผิดชอบ และรายงานจะซิงค์ผ่านฐานข้อมูลส่วนกลาง ส่วนไฟล์รายงานยังอัปโหลดไปยัง Google Drive ตามที่ตั้งค่าไว้</div>
                 <div style="height:14px"></div>
                 <dl class="kv">
-                  <dt>เวอร์ชัน</dt><dd>4.2</dd>
+                  <dt>เวอร์ชัน</dt><dd>4.3</dd>
                   <dt>ผู้พัฒนา</dt><dd>KruPoppon Sribudda</dd>
                   <dt>ติดต่อ</dt><dd><a class="fb" href="https://web.facebook.com/nchpk.net" target="_blank" rel="noopener"><svg><use href="#i-fb"/></svg>web.facebook.com/nchpk.net</a></dd>
                   <dt>รูปแบบไฟล์ที่รองรับ</dt><dd>.xlsx · .xlsm · .xls · .csv</dd>
@@ -2260,6 +2260,17 @@ function renderBudget(){
     <td class="num">${nf(o.b)}</td><td class="num">${nf(o.u)}</td><td class="num">${nf(o.rm)}</td>
     <td class="num">${nfd(pct(o.u,o.b),2)}%</td></tr>`).join('')+`</tbody></table>`:emptyBox('ไม่พบข้อมูลตามเงื่อนไข');
 }
+function fundCategory(r){
+  const source=String(r?.source||'').toLowerCase();
+  if(/พัฒนาผู้เรียน|กิจกรรมพัฒนาผู้เรียน|เรียนฟรี/.test(source))return 'development';
+  if(/อุดหนุน|เงินอุดหนุน/.test(source))return 'subsidy';
+  return 'other';
+}
+function fundSplit(rows){
+  const out={subsidy:{budget:0,used:0,remain:0},development:{budget:0,used:0,remain:0},other:{budget:0,used:0,remain:0}};
+  rows.forEach(r=>{const f=fundCategory(r),finance=reportBudgetValues(r);out[f].budget+=r.budget;out[f].used+=finance.used;out[f].remain+=finance.remain;});
+  return out;
+}
 function renderUnits(){
   const un=agg(S.view,'unit').sort((a,b)=>b.budget-a.budget);
   hbars3d('#ch-unitbar',{items:un.map((u,i)=>({label:u.key,value:u.budget,color:colorAt(i),
@@ -2269,9 +2280,11 @@ function renderUnits(){
     return `<div class="dept" data-u="${esc(u.key)}" role="button" tabindex="0" style="--kc:${c}">
       <div class="dept-h"><span class="dept-bar"></span>
         <div><div class="dept-n">${esc(u.key)}</div><div class="dept-c">${nf(u.n)} โครงการ / กิจกรรม</div></div></div>
-      <div class="dept-row"><span>งบที่ได้รับ</span><b>${nf(u.budget)}</b></div>
+      <div class="dept-row"><span>งบที่ได้รับรวม</span><b>${nf(u.budget)}</b></div>
+      <div class="fund-split"><div><span>อุดหนุน</span><b>${nf(fundSplit(S.view.filter(r=>r.unit===u.key)).subsidy.budget)}</b></div><div><span>พัฒนาผู้เรียน</span><b>${nf(fundSplit(S.view.filter(r=>r.unit===u.key)).development.budget)}</b></div></div>
       <div class="dept-row"><span>งบที่ใช้ไป</span><b>${nf(u.used)}</b></div>
-      <div class="dept-row"><span>คงเหลือ</span><b>${nf(u.remain)}</b></div>
+      <div class="fund-split"><div><span>คงเหลืออุดหนุน</span><b>${nf(fundSplit(S.view.filter(r=>r.unit===u.key)).subsidy.remain)}</b></div><div><span>คงเหลือพัฒนาผู้เรียน</span><b>${nf(fundSplit(S.view.filter(r=>r.unit===u.key)).development.remain)}</b></div></div>
+      <div class="dept-row"><span>คงเหลือรวม</span><b>${nf(u.remain)}</b></div>
       <div class="dept-row"><span>อัตราเบิกจ่าย</span><b>${nfd(pct(u.used,u.budget),1)}%</b></div>
       <div class="kpi-bar" style="--kc2:${shade(c,-.3)}"><i style="width:${clamp(pct(u.used,u.budget),0,100)}%"></i></div>
     </div>`}).join(''):emptyBox('ไม่พบหน่วยงานตามเงื่อนไข');
@@ -2311,9 +2324,9 @@ function projectReportGroups(rows){
   rows.forEach(r=>{
     const key=r.unit||'ไม่ระบุโครงการหลัก / กลุ่มงาน';
     let g=grouped.get(key);
-    if(!g){g={key,rows:[],first:r.i,n:0,budget:0,used:0,remain:0,complete:0,draft:0,pending:0,assigned:0,activityDone:0};grouped.set(key,g);}
+    if(!g){g={key,rows:[],first:r.i,n:0,budget:0,used:0,remain:0,subsidy:{budget:0,used:0,remain:0},development:{budget:0,used:0,remain:0},other:{budget:0,used:0,remain:0},complete:0,draft:0,pending:0,assigned:0,activityDone:0};grouped.set(key,g);}
     const state=reportState(r),finance=reportBudgetValues(r);
-    g.rows.push(r);g.n++;g.budget+=r.budget;g.used+=finance.used;g.remain+=finance.remain;
+    g.rows.push(r);g.n++;g.budget+=r.budget;g.used+=finance.used;g.remain+=finance.remain;const fc=fundCategory(r);g[fc].budget+=r.budget;g[fc].used+=finance.used;g[fc].remain+=finance.remain;
     if(state==='complete')g.complete++;else if(state==='draft')g.draft++;else g.pending++;
     if(resolvedResponsible(r)!==NO_RESPONSIBLE)g.assigned++;if(r.done)g.activityDone++;
   });
@@ -2349,8 +2362,8 @@ function renderReport(){
       const state=reportState(row),finance=reportBudgetValues(row),data=reportFor(row);
       return `<tr><td class="num">${esc(row.seq)}</td><td class="activity-name">${esc(row.project)}</td><td>${responsibleHtml(row)}</td><td class="num">${nf(row.budget)}</td><td class="num">${nf(finance.used)}</td><td class="num ${finance.remain<0?'budget-negative':''}">${nf(finance.remain)}</td><td title="${esc(reportStatusLabel(row))}">${reportBadgeHtml(state)}</td><td style="text-align:right"><div class="project-report-actions"><button class="btn btn-primary btn-sm" type="button" data-open-summary-report="${row.i}"><svg><use href="#i-report"/></svg>${internalReportCreated(data)?'เปิดรายงาน':'จัดทำรายงาน'}</button>${reportUploadActions(row,data,true)}</div></td></tr>`;
     }).join('');
-    return `<tr><td class="num">${i+1}</td><td class="group-title"><button class="group-name-btn" type="button" data-toggle-report-group="${i}" aria-expanded="false"><svg><use href="#i-folder"/></svg><span>${esc(g.key)}</span></button></td><td class="num">${nf(g.n)}</td><td class="num">${nf(g.budget)}</td><td class="num">${nf(g.used)}</td><td class="num ${g.remain<0?'budget-negative':''}">${nf(g.remain)}</td><td class="num"><span class="report-count sent">${nf(g.complete)}</span></td><td class="num"><span class="report-count draft">${nf(g.draft)}</span></td><td class="num"><span class="report-count pending">${nf(g.pending)}</span></td><td class="report-progress-cell">${reportProgressHtml(g.complete,g.n)}</td><td class="no-print-col"><div class="project-report-actions"><button class="btn btn-ghost btn-sm" type="button" data-toggle-report-group="${i}" aria-expanded="false">ดูรายละเอียด</button><button class="btn btn-primary btn-sm" type="button" data-open-report-unit="${i}">ทะเบียนรายงาน</button></div></td></tr>
-      <tr class="report-group-detail" id="report-group-detail-${i}" hidden><td colspan="11"><div class="report-group-panel"><div class="report-group-panel-head"><h4>กิจกรรมภายใต้ ${esc(g.key)}</h4><span>งบคงเหลือ ${nf(g.remain)} บาท · ระบุผู้รับผิดชอบ ${nf(g.assigned)} / ${nf(g.n)} รายการ</span></div><div class="report-group-activities"><table><thead><tr><th>ที่</th><th>กิจกรรม / โครงการย่อย</th><th>ผู้รับผิดชอบ</th><th class="num">งบที่ได้รับ</th><th class="num">ใช้ไป</th><th class="num">คงเหลือ</th><th>สถานะรายงาน</th><th style="text-align:right">ดำเนินการ</th></tr></thead><tbody>${activities}</tbody></table></div></div></td></tr>`;
+    return `<tr><td class="num">${i+1}</td><td class="group-title"><button class="group-name-btn" type="button" data-toggle-report-group="${i}" aria-expanded="false"><svg><use href="#i-folder"/></svg><span>${esc(g.key)}</span></button></td><td class="num">${nf(g.n)}</td><td class="num"><div>${nf(g.budget)}</div><small class="fund-breakdown">อุดหนุน ${nf(g.subsidy.budget)} · พัฒนาผู้เรียน ${nf(g.development.budget)}</small></td><td class="num">${nf(g.used)}</td><td class="num ${g.remain<0?'budget-negative':''}"><div>${nf(g.remain)}</div><small class="fund-breakdown">อุดหนุน ${nf(g.subsidy.remain)} · พัฒนาผู้เรียน ${nf(g.development.remain)}</small></td><td class="num"><span class="report-count sent">${nf(g.complete)}</span></td><td class="num"><span class="report-count draft">${nf(g.draft)}</span></td><td class="num"><span class="report-count pending">${nf(g.pending)}</span></td><td class="report-progress-cell">${reportProgressHtml(g.complete,g.n)}</td><td class="no-print-col"><div class="project-report-actions"><button class="btn btn-ghost btn-sm" type="button" data-toggle-report-group="${i}" aria-expanded="false">ดูรายละเอียด</button><button class="btn btn-primary btn-sm" type="button" data-open-report-unit="${i}">ทะเบียนรายงาน</button></div></td></tr>
+      <tr class="report-group-detail" id="report-group-detail-${i}" hidden><td colspan="11"><div class="report-group-panel"><div class="report-group-panel-head"><h4>กิจกรรมภายใต้ ${esc(g.key)}</h4><span>งบคงเหลือ ${nf(g.remain)} บาท · อุดหนุนเหลือ ${nf(g.subsidy.remain)} · พัฒนาผู้เรียนเหลือ ${nf(g.development.remain)} · ระบุผู้รับผิดชอบ ${nf(g.assigned)} / ${nf(g.n)} รายการ</span></div><div class="report-group-activities"><table><thead><tr><th>ที่</th><th>กิจกรรม / โครงการย่อย</th><th>ผู้รับผิดชอบ</th><th class="num">งบที่ได้รับ</th><th class="num">ใช้ไป</th><th class="num">คงเหลือ</th><th>สถานะรายงาน</th><th style="text-align:right">ดำเนินการ</th></tr></thead><tbody>${activities}</tbody></table></div></div></td></tr>`;
   }).join('');
   $('#reportBody').innerHTML=`<div class="note"><b>ขอบเขตรายงาน</b> — ${fl.length?esc(fl.join(' | ')):'ข้อมูลทั้งหมด (ไม่ได้ใช้ตัวกรอง)'}${S.q?` | คำค้น: ${esc(S.q)}`:''}<br>แหล่งข้อมูล: ${esc(S.fileName)} · ออกรายงานวันที่ ${esc(reportDate)}</div><div style="height:16px"></div><div class="tbl-wrap project-report-table" id="projectReportGroupTable"><table><thead><tr><th style="width:52px">#</th><th class="group-title">โครงการหลัก / กลุ่มงาน</th><th class="num">กิจกรรมย่อย</th><th class="num">งบประมาณ</th><th class="num">เบิกจ่าย</th><th class="num">คงเหลือ</th><th class="num">ส่งแล้ว</th><th class="num">ฉบับร่าง</th><th class="num">ยังไม่ส่ง</th><th>ความคืบหน้ารายงาน</th><th class="no-print-col">ดำเนินการ</th></tr></thead><tbody>${body}</tbody><tfoot class="tfoot"><tr><td colspan="2">รวมทั้งหมด</td><td class="num">${nf(v.length)}</td><td class="num">${nf(b)}</td><td class="num">${nf(u)}</td><td class="num">${nf(r)}</td><td class="num">${nf(complete)}</td><td class="num">${nf(draft)}</td><td class="num">${nf(pending)}</td><td>${reportProgressHtml(complete,v.length)}</td><td class="no-print-col">—</td></tr></tfoot></table></div><div style="height:18px"></div><div class="note warn"><b>เกณฑ์สถานะรายงาน:</b> ส่งรายงานแล้ว = มีทั้งไฟล์รายงานและข้อมูลรายงานในระบบ · ฉบับร่าง = มีเพียงอย่างใดอย่างหนึ่ง · ยังไม่ส่งรายงาน = ยังไม่มีทั้งสองอย่าง</div>`;
   $$('#projectReportGroupTable [data-toggle-report-group]').forEach(button=>button.onclick=()=>{
