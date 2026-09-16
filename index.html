@@ -655,7 +655,7 @@ html[data-theme="dark"] .activity-report-toolbar h2{color:#d8efff}
 }
 
 </style>
-</head>
+<style>.file-icon-actions{display:flex;gap:6px;align-items:center;justify-content:center;white-space:nowrap}.file-icon-button{width:36px;height:36px;padding:7px;display:inline-flex;align-items:center;justify-content:center}.file-icon-button svg{width:20px;height:20px}.file-icon-button[data-remove-attachment]{color:#be123c}.file-icon-button[data-remove-attachment]:hover{background:#fff1f2}</style></head>
 <body>
 <a class="skip-link" href="#mainContent">ข้ามไปยังเนื้อหาหลัก</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1042,7 +1042,7 @@ html[data-theme="dark"] .activity-report-toolbar h2{color:#d8efff}
                 ทำงานได้บนคอมพิวเตอร์ แท็บเล็ต และมือถือ เมื่อนำชุด Cloudflare D1 ไปเผยแพร่ ข้อมูลโครงการ งบประมาณ ผู้รับผิดชอบ และรายงานจะซิงค์ผ่านฐานข้อมูลส่วนกลาง ส่วนไฟล์รายงานยังอัปโหลดไปยัง Google Drive ตามที่ตั้งค่าไว้</div>
                 <div style="height:14px"></div>
                 <dl class="kv">
-                  <dt>เวอร์ชัน</dt><dd>4.0</dd>
+                  <dt>เวอร์ชัน</dt><dd>4.2</dd>
                   <dt>ผู้พัฒนา</dt><dd>KruPoppon Sribudda</dd>
                   <dt>ติดต่อ</dt><dd><a class="fb" href="https://web.facebook.com/nchpk.net" target="_blank" rel="noopener"><svg><use href="#i-fb"/></svg>web.facebook.com/nchpk.net</a></dd>
                   <dt>รูปแบบไฟล์ที่รองรับ</dt><dd>.xlsx · .xlsm · .xls · .csv</dd>
@@ -1410,6 +1410,7 @@ const CLOUD_SYNC_API='/api/sync';
 const CLOUD_DB_PIN_KEY='pt_cloud_db_pin_v1';
 const CLOUD_RECORD_MAX_BYTES=1850000;
 const DRIVE_FOLDER_ID='1cPHgsiABHw-ofq8HQkkPJ88YSQDp0Wmm';
+const PROJECT_FOLDER_ID='110Y9ZPkB97pHjU3oH8TsWxhh5QP_Ytuv';
 const DRIVE_FOLDER_URL='https://drive.google.com/drive/folders/'+DRIVE_FOLDER_ID;
 const DRIVE_UPLOAD_ENDPOINT_KEY='pt_drive_upload_endpoint_v1';
 const DRIVE_UPLOAD_PIN_KEY='pt_drive_upload_pin_v1';
@@ -2431,13 +2432,12 @@ function internalReportCreated(data){
   return true;
 }
 function reportSignals(r){const data=reportFor(r);return {data,hasFile:!!String(data?.pdfUrl||'').trim(),hasForm:internalReportCreated(data)};}
-function reportState(r){const s=reportSignals(r);return s.hasFile&&s.hasForm?'complete':s.hasFile||s.hasForm?'draft':'none';}
+function reportState(r){const s=reportSignals(r);return s.hasFile?'complete':s.hasForm?'draft':'none';}
 function reportFilterStatus(r){const state=reportState(r);return state==='complete'?'ส่งรายงานแล้ว':state==='draft'?'ฉบับร่าง':'ยังไม่ส่งรายงาน';}
 function reportButtonLabel(r){return reportSignals(r).hasForm?'แก้ไขรายงาน':'จัดทำรายงาน';}
 function reportStatusLabel(r){
   const s=reportSignals(r);
-  if(s.hasFile&&s.hasForm)return 'ส่งรายงานแล้ว';
-  if(s.hasFile)return 'ฉบับร่าง — รอจัดทำข้อมูลรายงานในระบบ';
+  if(s.hasFile)return 'ส่งรายงานแล้ว';
   if(s.hasForm)return 'ฉบับร่าง — รออัปโหลดไฟล์รายงาน';
   return 'ยังไม่ส่งรายงาน';
 }
@@ -2456,10 +2456,27 @@ function reportBadgeHtml(state){
   const label=state==='complete'?'ส่งรายงานแล้ว':state==='draft'?'ฉบับร่าง':'ยังไม่ส่งรายงาน';
   return `<span class="report-badge ${state}">${label}</span>`;
 }
-function reportUploadActions(r,data,compact=false){
-  const hasFile=!!data?.pdfUrl,uploadLabel=hasFile?(compact?'เปลี่ยน':'เปลี่ยนไฟล์'):(compact?'อัปโหลด':'อัปโหลดรายงาน');
-  return `<div class="report-upload-actions">${hasFile?`<button class="btn btn-ghost btn-sm" type="button" data-open-report-link="${esc(data.pdfUrl)}" title="${esc(data.reportFileName||'เปิดไฟล์รายงาน')}">เปิดรายงาน</button>`:''}<button class="btn btn-ghost btn-sm" type="button" data-upload-activity-report="${r.i}" title="อัปโหลดรายงานไปยัง Google Drive"><svg><use href="#i-upload"/></svg><span>${uploadLabel}</span></button></div>`;
+function fileIconButton(label,attribute,value,icon){
+  const paths={document:'M14 2H6v20h12V6z M14 2v5h5 M9 12h6 M9 16h6',edit:'M4 16v4h4L20 8l-4-4z M13 7l4 4',trash:'M3 6h18 M9 6V3h6v3 M6 6l1 15h10l1-15 M10 10v7 M14 10v7',upload:'M12 16V3 M7 8l5-5 5 5 M4 15v6h16v-6'};
+  return '<button type="button" class="btn btn-ghost btn-sm file-icon-button" title="'+esc(label)+'" aria-label="'+esc(label)+'" '+attribute+'="'+esc(value)+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+paths[icon]+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
 }
+function attachmentActions(r,data,kind){
+  const project=kind==='project',url=project?data?.projectFileUrl:data?.pdfUrl,label=project?'ไฟล์โครงการ':'รายงานกิจกรรม',attr=project?'data-upload-project-file':'data-upload-activity-report';
+  return '<div class="file-icon-actions">'+(url?fileIconButton('เปิด'+label,'data-open-report-link',url,'document'):'')+fileIconButton((url?'เปลี่ยน':'อัปโหลด')+label,attr,r.i,url?'edit':'upload')+(url?fileIconButton('ลบ'+label+'ออกจากกิจกรรม','data-remove-attachment',kind+':'+r.i,'trash'):'')+'</div>';
+}
+function projectUploadActions(r,data){return attachmentActions(r,data,'project');}
+function reportUploadActions(r,data){return attachmentActions(r,data,'report');}
+function removeActivityAttachment(i,kind){
+  if(QUICK_REPORT_UPLOAD.busy)return;
+  const r=S.recs.find(x=>x.i===i);if(!r)return;const key=reportRecordKey(r),previous=ACTIVITY_REPORTS[key];if(!previous)return;
+  if(!confirm('ลบไฟล์แนบนี้ออกจากกิจกรรม? ข้อมูลการเงินและไฟล์ต้นฉบับใน Google Drive จะยังอยู่'))return;
+  const next={...previous};
+  const fields=kind==='project'?['projectFileUrl','projectFileName','projectDriveFileId','projectUploadedAt']:['pdfUrl','reportFileName','reportDriveFileId','reportUploadedAt'];
+  fields.forEach(field=>next[field]='');next.updatedAt=new Date().toISOString();ACTIVITY_REPORTS[key]=next;
+  if(!persistActivityReports()){ACTIVITY_REPORTS[key]=previous;return;}
+  queueCloudReportSave(key,next);buildFilters();refresh();toast('ลบไฟล์แนบออกจากกิจกรรมแล้ว','ok');
+}
+document.addEventListener('click',event=>{const button=event.target.closest('[data-remove-attachment]');if(!button)return;const [kind,i]=button.dataset.removeAttachment.split(':');removeActivityAttachment(+i,kind);});
 function renderActivityReports(){
   const rows=S.view,complete=rows.filter(r=>reportState(r)==='complete').length,draft=rows.filter(r=>reportState(r)==='draft').length,pending=rows.filter(r=>reportState(r)==='none').length,assigned=rows.filter(r=>r.responsible!==NO_RESPONSIBLE).length;
   const financials=rows.map(r=>({r,...reportBudgetValues(r)})),allocated=sum(rows,'budget'),used=financials.reduce((total,x)=>total+x.used,0),remaining=financials.reduce((total,x)=>total+x.remain,0),over=financials.filter(x=>x.remain<0).length;
@@ -2477,9 +2494,10 @@ function renderActivityReports(){
     const state=reportState(r),data=reportFor(r),finance=reportBudgetValues(r),health=budgetHealth(finance.used,r.budget);
     const hasPayments=reportDisbursements(data?.disbursements).length>0;
     const remainingCell=hasPayments?`<span class="num ${finance.remain<0?'budget-negative':''}">${nf(finance.remain)}</span><small class="inline-money-locked">คำนวณจากประวัติเบิกจ่าย</small>`:`<div class="inline-money-editor"><input type="number" step="0.01" max="${esc(r.budget)}" value="${esc(finance.remain)}" data-original-remaining="${esc(finance.remain)}" data-remaining-edit="${r.i}" aria-label="เงินคงเหลือของ ${esc(r.project)}"></div>`;
-    return `<tr><td class="num">${esc(r.seq)}</td><td class="report-name">${esc(r.project)}${data?.updatedAt?`<small style="display:block;color:var(--muted);font-weight:400;margin-top:3px">แก้ไขล่าสุด ${esc(new Date(data.updatedAt).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}))}</small>`:''}</td><td>${esc(r.unit)}</td><td>${data?.projectFileUrl?`<button class="btn btn-ghost btn-sm" type="button" data-open-report-link="${esc(data.projectFileUrl)}" title="เปิดไฟล์โครงการ">ไฟล์โครงการ</button>`:'—'}</td><td class="num">${nf(r.budget)}</td><td class="num">${nf(finance.used)}</td><td>${remainingCell}</td><td><span class="budget-health ${health.key}" title="เบิกจ่าย ${nfd(health.rate,2)}%">${health.label}</span></td><td>${reportUploadActions(r,data)}</td><td>${responsibleHtml(r)}</td><td><span class="pill" style="color:${r.color};background:${r.color}1f;border-color:${r.color}40"><i></i>${esc(r.status)}</span></td><td title="${esc(reportStatusLabel(r))}">${reportBadgeHtml(state)}</td></tr>`;
+    return `<tr><td class="num">${esc(r.seq)}</td><td class="report-name">${esc(r.project)}${data?.updatedAt?`<small style="display:block;color:var(--muted);font-weight:400;margin-top:3px">แก้ไขล่าสุด ${esc(new Date(data.updatedAt).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}))}</small>`:''}</td><td>${esc(r.unit)}</td><td>${projectUploadActions(r,data)}</td><td class="num">${nf(r.budget)}</td><td class="num">${nf(finance.used)}</td><td>${remainingCell}</td><td><span class="budget-health ${health.key}" title="เบิกจ่าย ${nfd(health.rate,2)}%">${health.label}</span></td><td>${reportUploadActions(r,data)}</td><td>${responsibleHtml(r)}</td><td><span class="pill" style="color:${r.color};background:${r.color}1f;border-color:${r.color}40"><i></i>${esc(r.status)}</span></td><td title="${esc(reportStatusLabel(r))}">${reportBadgeHtml(state)}</td></tr>`;
   }).join('')}</tbody></table>`;
   $$('#activityReportList [data-open-report-link]').forEach(b=>b.onclick=()=>openReportLink(b.dataset.openReportLink));
+  $$('#activityReportList [data-upload-project-file]').forEach(b=>b.onclick=()=>beginActivityReportUpload(+b.dataset.uploadProjectFile,b,'project'));
   $$('#activityReportList [data-upload-activity-report]').forEach(b=>b.onclick=()=>beginActivityReportUpload(+b.dataset.uploadActivityReport,b));
   $$('#activityReportList [data-remaining-edit]').forEach(input=>{
     input.oninput=()=>{input.classList.remove('invalid');updateSaveAllRemainingButton();};
@@ -2641,22 +2659,26 @@ function saveDriveUploadConfig(){
   if(!pin){toast('กรุณากรอกรหัสอัปโหลดให้ตรงกับไฟล์ Code.gs','err');$('#driveUploadPin').focus();return false;}
   LS.set(DRIVE_UPLOAD_ENDPOINT_KEY,endpoint);LS.set(DRIVE_UPLOAD_PIN_KEY,pin);updateDriveConfigState();toast('บันทึกการเชื่อมต่อ Google Drive แล้ว','ok');return true;
 }
-function beginActivityReportUpload(i,trigger){
+function beginActivityReportUpload(i,trigger,kind="report"){
   if(QUICK_REPORT_UPLOAD.busy)return;const r=S.recs.find(x=>x.i===i);if(!r)return;
   if(!validDriveWebAppUrl(driveUploadEndpoint())||!driveUploadPin()){
     toast('กรุณาตั้งค่าการเชื่อมต่อ Google Drive ก่อนอัปโหลดรายงาน','err');go('settings');setTimeout(()=>$('#driveWebAppUrl')?.focus(),180);return;
   }
-  QUICK_REPORT_UPLOAD.record=r;QUICK_REPORT_UPLOAD.trigger=trigger||document.activeElement;const input=$('#activityReportUploadFile');input.value='';input.click();
+  QUICK_REPORT_UPLOAD.kind=kind;QUICK_REPORT_UPLOAD.record=r;QUICK_REPORT_UPLOAD.trigger=trigger||document.activeElement;const input=$('#activityReportUploadFile');input.value='';input.click();
 }
 function reportFileBase64(file){
   return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error('อ่านไฟล์รายงานไม่สำเร็จ'));reader.onload=()=>{const value=String(reader.result||''),comma=value.indexOf(',');comma<0?reject(new Error('รูปแบบไฟล์รายงานไม่ถูกต้อง')):resolve(value.slice(comma+1));};reader.readAsDataURL(file);});
 }
 function setQuickReportUploadBusy(r,busy){
-  QUICK_REPORT_UPLOAD.busy=busy;$$(`[data-upload-activity-report="${r.i}"]`).forEach(button=>{button.disabled=busy;button.classList.toggle('uploading-report',busy);if(busy){button.dataset.uploadOriginal=button.innerHTML;button.innerHTML='<span>กำลังอัปโหลด…</span>';}else if(button.dataset.uploadOriginal){button.innerHTML=button.dataset.uploadOriginal;delete button.dataset.uploadOriginal;}});
+  QUICK_REPORT_UPLOAD.busy=busy;$$(`[data-upload-activity-report="${r.i}"], [data-upload-project-file="${r.i}"]`).forEach(button=>{button.disabled=busy;button.classList.toggle('uploading-report',busy);if(busy){button.dataset.uploadOriginal=button.innerHTML;button.innerHTML='<span>กำลังอัปโหลด…</span>';}else if(button.dataset.uploadOriginal){button.innerHTML=button.dataset.uploadOriginal;delete button.dataset.uploadOriginal;}});
 }
 function saveUploadedReportReference(r,file,result){
   const key=reportRecordKey(r),previous=ACTIVITY_REPORTS[key],base={...reportDefaults(r),...(previous||{})},updatedAt=new Date().toISOString();
+  if(QUICK_REPORT_UPLOAD.kind==='project'){
+    base.projectFileUrl=String(result.url||result.webViewLink||'').trim();base.projectFileName=file.name;base.projectDriveFileId=String(result.fileId||'');base.projectUploadedAt=updatedAt;
+  }else{
   base.pdfUrl=String(result.url||result.webViewLink||'').trim();base.reportFileName=String(result.name||file.name).trim();base.reportDriveFileId=String(result.fileId||'').trim();base.reportUploadedAt=updatedAt;
+  }
   base.updatedAt=updatedAt;base.createdAt=previous?.createdAt||updatedAt;base.reportStatus=previous?.reportStatus||'draft';base.reportFormCreated=previous?internalReportCreated(previous):false;
   base.activity={year:r.year,unit:r.unit,responsible:base.responsible,seq:r.seq,project:r.project,budget:r.budget,source:r.source};
   ACTIVITY_REPORTS[key]=base;
@@ -2671,12 +2693,12 @@ async function uploadActivityReportFile(file){
   try{
     const base64=await reportFileBase64(file),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),120000);
     let response;
-    try{response=await fetch(driveUploadEndpoint(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'uploadActivityReport',pin:driveUploadPin(),folderId:DRIVE_FOLDER_ID,activity:{seq:r.seq,name:r.project,unit:r.unit,year:r.year,responsible:resolvedResponsible(r)},file:{name:file.name,mimeType:file.type||'application/octet-stream',size:file.size,base64}}),redirect:'follow',signal:controller.signal});}
+    try{response=await fetch(driveUploadEndpoint(),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:QUICK_REPORT_UPLOAD.kind==='project'?'uploadProjectFile':'uploadActivityReport',pin:driveUploadPin(),folderId:QUICK_REPORT_UPLOAD.kind==='project'?PROJECT_FOLDER_ID:DRIVE_FOLDER_ID,activity:{seq:r.seq,name:r.project,unit:r.unit,year:r.year,responsible:resolvedResponsible(r)},file:{name:file.name,mimeType:file.type||'application/octet-stream',size:file.size,base64}}),redirect:'follow',signal:controller.signal});}
     finally{clearTimeout(timer);}
     const raw=await response.text();let result;try{result=JSON.parse(raw);}catch(error){throw new Error('เว็บแอป Google Drive ตอบกลับไม่ถูกต้อง กรุณาตรวจสิทธิ์การปรับใช้');}
     if(!response.ok||!result?.ok)throw new Error(result?.error||'อัปโหลดรายงานไม่สำเร็จ');
     if(!result.url)throw new Error('อัปโหลดไฟล์แล้วแต่ไม่ได้รับลิงก์กลับมา');
-    if(saveUploadedReportReference(r,file,result)){buildFilters();refresh();toast(`อัปโหลดรายงานกิจกรรมลำดับ ${r.seq} ไปยัง Google Drive แล้ว`,'ok');return true;}
+    if(saveUploadedReportReference(r,file,result)){buildFilters();refresh();toast(`อัปโหลด${QUICK_REPORT_UPLOAD.kind==='project'?'ไฟล์โครงการ':'รายงานกิจกรรม'}ลำดับ ${r.seq} ไปยัง Google Drive แล้ว`,'ok');return true;}
     return false;
   }catch(error){toast(error.name==='AbortError'?'อัปโหลดใช้เวลานานเกินไป กรุณาลองใหม่':(error.message||'อัปโหลดรายงานไม่สำเร็จ'),'err');return false;}
   finally{setQuickReportUploadBusy(r,false);const trigger=QUICK_REPORT_UPLOAD.trigger;QUICK_REPORT_UPLOAD.record=null;QUICK_REPORT_UPLOAD.trigger=null;if(trigger?.isConnected)trigger.focus();}
